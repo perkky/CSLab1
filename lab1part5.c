@@ -35,7 +35,7 @@ int main(void) {
    if (my_rank == 0) {
       printf("Proc %d of %d > Does anyone have a toothpick?\n", my_rank, comm_sz);
       for(src = 1; src < comm_sz; src++){
-         MPI_Recv(msg, MAX_STRING, MPI_CHAR, MPI_ANY_SOURCE, 0, comm, MPI_STATUS_IGNORE);
+         MPI_Recv(msg, MAX_STRING, MPI_CHAR, src, 0, comm, MPI_STATUS_IGNORE);
          printf("%s", msg);
       }
    } else {

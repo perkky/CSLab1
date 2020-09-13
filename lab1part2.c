@@ -36,10 +36,9 @@ int main(void) {
    
    if ( my_rank == 0) {
       all_ints = malloc(comm_sz*sizeof(int));
+
       /* Gather from each process each my_int to send back to process 0 to store all summands in array all_ints*/
-      all_ints[0] = my_int;
-      for (int i = 1; i < comm_sz; i++)
-         MPI_Recv((void*)&all_ints[i], 1, MPI_LONG_LONG_INT, i, MPI_ANY_TAG, comm, NULL);
+      MPI_Gather((void*)&my_int, 1, MPI_INT, (void*)all_ints, 1, MPI_INT, 0, comm);
 
       printf("Ints being summed:\n   ");
       for (i = 0; i < comm_sz; i++)
@@ -55,7 +54,7 @@ int main(void) {
       free(all_ints);
    } else {
       /* Gather from each process each my_int to send back to process 0 to store all summands in array all_ints*/
-      MPI_Send((void*)&my_int, 1, MPI_INT, i, 0, comm);
+      MPI_Gather((void*)&my_int, 1, MPI_INT, NULL, 1, MPI_INT, 0, comm);
    }
    
    MPI_Finalize();
@@ -84,7 +83,7 @@ int Global_sum(
       if (my_rank < partner) {
          if (partner < comm_sz) {
             /* Recv value from partner into recvtemp */ 
-            MPI_Recv((void*)&recvtemp, 1, MPI_LONG_LONG_INT, partner, MPI_ANY_TAG, comm, NULL);
+            MPI_Recv((void*)&recvtemp, 1, MPI_INT, partner, MPI_ANY_TAG, comm, NULL);
             my_sum += recvtemp;
          }
          bitmask <<= 1;

@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-void Get_input(long long int* number_of_tosses, int my_rank, int comm_sz, MPI_Comm comm);
+void Get_input(long long int* number_of_tosses, int my_rank, MPI_Comm comm);
 long long int Monte_carlo(long long number_of_tosses, int my_rank);
 
 /*-------------------------------------------------------------------*/
@@ -33,7 +33,7 @@ int main(void) {
    MPI_Comm_size(comm, &comm_sz);
    MPI_Comm_rank(comm, &my_rank);
    
-   Get_input(&number_of_tosses, my_rank, comm_sz, comm);
+   Get_input(&number_of_tosses, my_rank, comm);
    local_number_of_tosses = number_of_tosses/comm_sz;
 
 #  ifdef DEBUG
@@ -43,20 +43,11 @@ int main(void) {
    local_number_in_circle = Monte_carlo(local_number_of_tosses, my_rank);
    
    /* Compute global sum of local_number_in_circle and store total in variable number_in_circle in process 0*/
+   MPI_Reduce((void*)&local_number_in_circle, (void*)&number_in_circle, 1, MPI_LONG_LONG_INT, MPI_SUM, 0, comm);
    
    if ( my_rank == 0 ){
-      number_in_circle += local_number_in_circle;
-      for ( int i = 1; i < comm_sz; i++)
-      {
-         MPI_Recv((void*)&local_number_of_tosses, 1, MPI_LONG_LONG_INT, i, MPI_ANY_TAG, comm, NULL);
-         number_in_circle += local_number_in_circle;
-      }
       pi_estimate = 4*number_in_circle/((double)number_of_tosses);
       printf("pi estimate = %f\n", pi_estimate);
-   }
-   else
-   {
-      MPI_Send((void*)&local_number_of_tosses, 1, MPI_LONG_LONG_INT, 0, 0, comm);
    }
    
    MPI_Finalize();
@@ -68,21 +59,14 @@ int main(void) {
 void Get_input(
       long long int* number_of_tosses  /* out */,
       int my_rank                      /* in  */, 
-      int comm_sz                      /* in  */,
       MPI_Comm comm                    /* in  */) {
       
    if (my_rank == 0 ) {
       printf("Enter the total number of tosses\n");
       scanf("%lld", number_of_tosses);
+   }
 
-      for (int i = 1; i < comm_sz; i++)
-          MPI_Send((void*)number_of_tosses, 1, MPI_LONG_LONG_INT, i, 0, comm);
-   }
-   else
-   {
-      /* Broadcast number_of_tosses to all communicators */
-      MPI_Recv((void*)number_of_tosses, 1, MPI_LONG_LONG_INT, 0, MPI_ANY_TAG, comm, NULL);
-   }
+   MPI_Bcast((void*)number_of_tosses, 1, MPI_LONG_LONG_INT, 0, comm);
 }  /* Get_input */
 
 
@@ -109,4 +93,5 @@ long long int Monte_carlo(long long local_number_of_tosses, int my_rank) {
    
    return number_in_circle;
 }  /* Monte_carlo */
+
 

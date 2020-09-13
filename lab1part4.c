@@ -20,6 +20,7 @@
 #include <time.h>
 #include "mpi.h"
 
+
 /* Use these parameters for generating times
  */
 #ifndef DEBUG
@@ -116,8 +117,10 @@ double ping_pong(char mesg[], int mesg_size, int iters, MPI_Comm comm,
    if (my_rank == 0) {
 #     ifndef CLOCK
       /* start timer for measurement with MPI_Wtime() */
+         start = MPI_Wtime();
 #     else
       /* start timer for measurement with clock() */
+         start = (double)clock();
 #     endif
       for (i = 0; i < iters; i++) {
          MPI_Send(mesg, mesg_size, MPI_CHAR, 1, 0, comm);
@@ -125,8 +128,10 @@ double ping_pong(char mesg[], int mesg_size, int iters, MPI_Comm comm,
       }
 #     ifndef CLOCK
       /* return elapsed time as measured by MPI_Wtime() */ 
+        return MPI_Wtime()-start;
 #     else
       /* return elapsed time as measured by clock() */ 
+        return ((double)clock()-start)/clocks_per_sec;
 #     endif
    } else if (my_rank == 1) {
       for (i = 0; i < iters; i++) {
